@@ -29,17 +29,6 @@ const sendTokenResponse = async (user, statusCode, res) => {
 
     const refreshTokenExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-    // Xoa cac token da qua han expiredAt
-    // Co 2 cach execute query: 1. await, 2. .exec()
-    User.updateOne(
-        { _id: user._id },
-        {
-            $pull: {
-                refreshToken: { expiredAt: { $lt: new Date() } }
-            }
-        }
-    ).exec();
-
     await User.updateOne(
         { _id: user._id },
         {
@@ -208,4 +197,12 @@ const authenticateToken = catchAsync(async (req, res, next) => {
     next();
 });
 
-module.exports = { signUp, signIn, logOut, refreshToken, authenticateToken }
+const restrictTo = (...roles) => {
+    return (req, res, next) => {
+        if (!roles.includes(req.user.role))
+            return next(new AppError("You don't have permission to perform this action", 403));
+        next();
+    }
+}
+
+module.exports = { signUp, signIn, logOut, refreshToken, authenticateToken, restrictTo }

@@ -1,0 +1,10 @@
+{
+    "name": "SSB",
+    "type": "mongodb-atlas",
+    "config": {
+        "clusterName": "SSB",
+        "readPreference": "primary",
+        "wireProtocolEnabled": false
+    },
+    "version": 1
+}
