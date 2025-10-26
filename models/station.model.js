@@ -26,7 +26,12 @@ const stationSchema = new mongoose.Schema({
     address: {
         type: addressSchema,
         required: true
-    }
+    },
+    isActive: {
+        type: Boolean,
+        default: true,
+        select: false
+    },
 });
 
 module.exports = mongoose.model("Station", stationSchema);

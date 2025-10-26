@@ -9,7 +9,12 @@ const routeSchema = new mongoose.Schema({
     stopPoints: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Station'
-    }]
+    }],
+    isActive: {
+        type: Boolean,
+        default: true,
+        select: false
+    }
 });
 
 module.exports = mongoose.model("Route", routeSchema);

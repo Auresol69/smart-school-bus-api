@@ -1,13 +1,39 @@
+const AppError = require('./appError');
 const catchAsync = require('./catchAsync');
+const APIFeatures = require('./apiFeatures');
 
 /** @param {import("mongoose").Model} Model */
 const selectAll = (Model) => {
     return catchAsync(async (req, res, next) => {
-        const docs = await Model.find({})
+
+        const features = new APIFeatures(Model.find({ isActive: { $ne: false } }), req.query).filter();
+
+        // Lấy query đã lọc để đếm tổng số kết quả (TRƯỚC KHI phân trang)
+        // Dùng .clone() để tạo một bản sao, tránh việc countDocuments bị ảnh hưởng bởi .pagination() sau này
+        const countQuery = features.query.clone();
+
+        features.sort().pagination();
+
+        const [models, totalResults] = await Promise.all([
+            features.query,
+            countQuery.countDocuments() // Dem documents sau khi clone
+        ]);
+
+        const page = parseInt(req.query.page, 10) || 1;
+        const limit = parseInt(req.query.limit, 10) || 10;
+        const totalPages = Math.ceil(totalResults / limit);
+
         res.json({
             status: "success",
-            result: docs.length,
-            data: docs
+            result: models.length,
+            data: models,
+            // Gợi ý 2: Cung cấp thêm thông tin cho client
+            pagination: {
+                totalResults: totalResults,
+                totalPages: totalPages,
+                currentPage: page,
+                limit: limit
+            }
         })
     })
 }
@@ -16,6 +42,9 @@ const selectAll = (Model) => {
 const selectOne = (Model) => {
     return catchAsync(async (req, res, next) => {
         const doc = await Model.findById(req.params.id)
+
+        if (!doc)
+            return next(new AppError(`No document found with that ID: ${req.params.id} in Collection: ${Model.modelName}`));
 
         res.status(200).json({
             status: "success",
@@ -47,6 +76,9 @@ const updateOne = (Model) => {
             }
         )
 
+        if (!doc)
+            return next(new AppError(`No document found with that ID: ${req.params.id} in Collection: ${Model.modelName}`));
+
         res.status(200).json({
             status: "success",
             data: doc
@@ -57,12 +89,16 @@ const updateOne = (Model) => {
 /** @param {import("mongoose").Model} Model */
 const deleteOne = (Model) => {
     return catchAsync(async (req, res, next) => {
-        const doc = await Model.findByIdAndDelete(req.params.id)
+        const doc = await Model.findByIdAndUpdate(req.params.id, { isActive: false }); // Soft delete
 
-        res.status(200).json({
+        if (!doc) {
+            return next(new AppError(`No document found with that ID: ${req.params.id} in Collection: ${Model.modelName}`, 404));
+        }
+
+        res.status(204).json({
             status: "success",
-            data: doc
-        })
+            data: null
+        });
     })
 }
 

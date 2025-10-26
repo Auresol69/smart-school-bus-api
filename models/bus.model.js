@@ -6,7 +6,12 @@ const busSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
-    isAssigned: { type: Boolean, default: false } // Đang được gán lịch trình
+    isAssigned: { type: Boolean, default: false }, // Đang được gán lịch trình
+    isActive: {
+        type: Boolean,
+        default: true,
+        select: false
+    }
 });
 
 module.exports = mongoose.model("Bus", busSchema);

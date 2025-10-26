@@ -10,11 +10,13 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true,
         unique: true,
+        index: 1
     },
     phoneNumber: {
         type: String,
         required: true,
-        unique: true
+        unique: true,
+        index: 1
     },
     password: {
         type: String,
@@ -40,7 +42,12 @@ const userSchema = new mongoose.Schema({
         type: String,
         enum: ['Admin', 'Manager', 'Parent', 'Driver'],
         required: true
-    }
+    },
+    isActive: {
+        type: Boolean,
+        default: true,
+        select: false
+    },
 });
 
 userSchema.pre('save', async function (next) {

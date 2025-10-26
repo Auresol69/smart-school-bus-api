@@ -40,7 +40,12 @@ const scheduleSchema = new mongoose.Schema({
     studentIds: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Student'
-    }]
+    }],
+    isActive: {
+        type: Boolean,
+        default: true,
+        select: false
+    }
 });
 
 module.exports = mongoose.model("Schedule", scheduleSchema);

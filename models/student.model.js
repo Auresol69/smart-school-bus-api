@@ -26,6 +26,11 @@ const studentSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Station'
     },
+    isActive: {
+        type: Boolean,
+        default: true,
+        select: false
+    }
 },{
     timestamps: true
 }

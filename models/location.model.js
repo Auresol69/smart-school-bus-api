@@ -4,7 +4,8 @@ const locationSchema = new mongoose.Schema({
     busId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Bus',
-        required: true
+        required: true,
+        index: 1
     },
     latitude: {
         type: Number,
@@ -16,7 +17,8 @@ const locationSchema = new mongoose.Schema({
     },
     timestamp: {
         type: Date,
-        default: Date.now
+        default: Date.now,
+        index: -1
     }
 });
 
