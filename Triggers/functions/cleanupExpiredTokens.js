@@ -1,7 +1,7 @@
 exports = async function cleanupExpiredTokens(){
-    const service = context.services.get("mongodb-atlas");
+    const service = context.services.get("SSB");
 
-    const db = service.db("SSB")
+    const db = service.db("SmartSchoolBus")
 
     const usersCollection = db.collection("users");
 
