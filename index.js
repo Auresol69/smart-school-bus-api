@@ -19,13 +19,25 @@ const Student = require("./models/student.model");
 const Trip = require("./models/trip.model");
 const AppError = require("./utils/appError");
 
+// WebSocket
+const { Server } = require('socket.io');
+const http = require('http');
+const server = http.createServer(app);
+const io = new Server(server, {
+    cors: {
+        origin: '*'
+    }
+});
+require('./services/initializeSocket.service')(io);
+
+
 // Database connection
 const { DB_URL, PORT } = process.env;
 const port = PORT || 3000;
 mongoose.connect(DB_URL)
     .then(() => {
         console.log("Database connected successfully!");
-        app.listen(port, () => {
+        server.listen(port, () => {
             console.log(`App running on port ${port}...`);
         });
     })
