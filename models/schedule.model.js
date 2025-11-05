@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
-const AppError = require("../utils/appError")
+const AppError = require("../utils/appError");
+const busModel = require("./bus.model");
 
 // Sub-schema cho các điểm dừng trong lịch trình
 const scheduledStopSchema = new mongoose.Schema({
@@ -36,7 +37,7 @@ const scheduleSchema = new mongoose.Schema({
     },
     driverId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User', // Giả sử User model lưu cả driver
+        ref: 'User',
         required: true
     },
     direction: {
@@ -123,6 +124,10 @@ scheduleSchema.pre('validate', function (next) {
     if (this.isNew || this.isModified('startDate') || this.isModified('endDate') || this.isModified('daysOfWeek')) {
         const { startDate, endDate, daysOfWeek } = this;
 
+        if (!startDate || !endDate || !(startDate instanceof Date) || !(endDate instanceof Date)) {
+            return next(new AppError('Validation failed: Both startDate and endDate must be valid Date objects.', 400));
+        }
+
         const diffTime = Math.abs(endDate - startDate);
         const diffDays = Math.ceil(diffTime / (24 * 60 * 60 * 1000));
 
@@ -150,5 +155,19 @@ scheduleSchema.pre('validate', function (next) {
 
     next();
 })
+
+/**
+ * Middleware chạy SAU KHI một lịch trình được lưu thành công.
+ * Cập nhật trạng thái `isAssigned` của xe buýt liên quan thành `true`.
+ */
+scheduleSchema.post('save', async function (doc, next) {
+    try {
+        await busModel.updateOne({ _id: doc.busId }, { $set: { isAssigned: true } });
+        next();
+    } catch (error) {
+        console.error(`Failed to update bus status for schedule ${doc._id}:`, error);
+        next(); // Vẫn gọi next() để không làm treo tiến trình
+    }
+});
 
 module.exports = mongoose.model("Schedule", scheduleSchema);

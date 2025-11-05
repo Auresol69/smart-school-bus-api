@@ -21,6 +21,29 @@ route.patch(
     tripController.updateTrip
 );
 
+route.get(
+    '/my-schedule',
+    restrictTo('Driver'),
+    tripController.getMySchedule
+);
+
+route.get('/:id/students',
+    restrictTo('Driver'),
+    tripController.getStudents
+);
+
+route.patch(
+    '/:id/check-in',
+    restrictTo('Driver'),
+    tripController.checkIn
+);
+
+route.patch(
+    '/:id/mark-absent',
+    restrictTo('Driver'),
+    tripController.markAsAbsent
+);
+
 // === CÁC ROUTE VẪN SỬ DỤNG FACTORY (HOẶC CONTROLLER ĐÃ WRAP FACTORY) ===
 
 route.get(
