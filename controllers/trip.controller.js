@@ -5,6 +5,7 @@ const factory = require('../utils/handlerFactory');
 const scheduleModel = require('../models/schedule.model');
 const tripModel = require('../models/trip.model');
 const studentModel = require('../models/student.model');
+const NotificationModel = require('../models/notification.model')
 
 // Sử dụng lại factory cho các hành động đơn giản
 exports.getAllTrips = factory.selectAll(Trip);
@@ -158,7 +159,7 @@ const updateStudentStatusInTrip = (action) => catchAsync(async (req, res, next) 
                 // Xu ly luon ca truong hop Student don tram sau
                 'studentStops.$.stationId': stationId,
                 'studentStops.$.action': action,
-                
+
                 'studentStops.$.timestamp': new Date()
             }
         },
@@ -183,12 +184,42 @@ const updateStudentStatusInTrip = (action) => catchAsync(async (req, res, next) 
         studentModel.findByIdAndUpdate(studentId, { $set: updatePayload });
     }
 
-    // logic để gửi thông báo cho phụ huynh
-    req.io.to(`trip_${updatedTrip._id}`).emit('student:checked_in',{
-        tripId: updatedTrip._id,
+    // (Như cũ - Báo cho live-map biết trạng thái đã thay đổi)
+    req.io.to(`trip_${updatedTrip._id}`).emit('student:checked_in', {
         studentId: studentId,
         action: action
     });
+
+    studentModel.findById(studentId).select('name parentId')
+        .then(student => {
+            if (!student || !student.parentId)
+                return;
+
+            let message;
+            if (action === 'PICKED_UP') {
+                message = `Con của bạn, ${student.name}, đã được đón lên xe.`;
+            } else if (action === 'DROPPED_OFF') {
+                message = `Con của bạn, ${student.name}, đã được trả xuống xe.`;
+            } else if (action === 'ABSENT') {
+                message = `Con của bạn, ${student.name}, đã bị đánh dấu vắng mặt.`;
+            } else {
+                return; // Không thông báo cho 'PENDING'
+            }
+
+            NotificationModel.create({
+                recipientId: student.parentId,
+                contextStudentId: studentId,
+                message: message
+            });
+
+            req.io.to(`user:${student.parentId}`).emit(`notification:new`, {
+                message: message,
+                studentId: studentId,
+                action: action
+            });
+        })
+        .catch(err => console.error('Lỗi lưu notification:', err));
+
 
     res.status(200).json({
         status: 'success',
