@@ -2,3 +2,5 @@
 node_modules/
 test-gps.html
 guisukientoitram.js
+user.controller.js
+user.route.js

@@ -14,10 +14,6 @@ const studentSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
-    routeId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Route'
-    },
     pickupStopId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Station'

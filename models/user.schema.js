@@ -40,7 +40,9 @@ const userSchema = new mongoose.Schema({
     }],
     role: {
         type: String,
-        enum: ['Admin', 'Manager', 'Parent', 'Driver'],
+        // vá lỗ hổng "Mass Assignment" (Gán hàng loạt)
+        // Chỉ cần bỏ role Admin và Manager =)))
+        enum: ['Parent', 'Driver'],
         required: true
     },
     isActive: {

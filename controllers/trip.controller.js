@@ -139,7 +139,7 @@ exports.getStudents = catchAsync(async (req, res, next) => {
  */
 const updateStudentStatusInTrip = (action) => catchAsync(async (req, res, next) => {
     const tripId = req.params.id;
-    const { studentId } = req.body;
+    const { studentId, stationId } = req.body;
 
     if (!studentId) {
         return next(new AppError("Please provide a studentId.", 400));
@@ -155,7 +155,10 @@ const updateStudentStatusInTrip = (action) => catchAsync(async (req, res, next) 
         },
         {
             $set: {
+                // Xu ly luon ca truong hop Student don tram sau
+                'studentStops.$.stationId': stationId,
                 'studentStops.$.action': action,
+                
                 'studentStops.$.timestamp': new Date()
             }
         },
@@ -172,7 +175,7 @@ const updateStudentStatusInTrip = (action) => catchAsync(async (req, res, next) 
     const currentStudentStop = updatedTrip.studentStops.find(s => s.studentId.toString() === studentId);
 
     if (currentStudentStop && (action === 'PICKED_UP' || action === 'DROPPED_OFF')) {
-        const fieldToUpdate = action === 'PICKED_UP' ? pickupStopId : dropoffStopId;
+        const fieldToUpdate = action === 'PICKED_UP' ? 'pickupStopId' : 'dropoffStopId';
 
         const updatePayload = { [fieldToUpdate]: currentStudentStop.stationId };
 
@@ -180,8 +183,12 @@ const updateStudentStatusInTrip = (action) => catchAsync(async (req, res, next) 
         studentModel.findByIdAndUpdate(studentId, { $set: updatePayload });
     }
 
-    // (Mở rộng) có thể thêm logic để gửi thông báo cho phụ huynh
-    // Ví dụ: await sendNotificationToParent(studentId, `Your child has been ${action}.`);
+    // logic để gửi thông báo cho phụ huynh
+    req.io.to(`trip_${updatedTrip._id}`).emit('student:checked_in',{
+        tripId: updatedTrip._id,
+        studentId: studentId,
+        action: action
+    });
 
     res.status(200).json({
         status: 'success',

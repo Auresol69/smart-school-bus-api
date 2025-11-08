@@ -1,11 +1,12 @@
-exports = async function() {
+exports = async function () {
     const service = context.services.get("SSB");
 
     const db = service.db("SmartSchoolBus")
-    
+
     const schedulesCollection = db.collection("schedules");
     const busesCollection = db.collection("buses");
-    
+    const tripsCollection = db.collection("trips");
+
     // 1. Lấy thời điểm hiện tại (bắt đầu của ngày hôm nay)
     // Để ý đến bất kỳ lịch trình nào chưa kết thúc (endDate >= hôm nay)
     const today = new Date();
@@ -15,14 +16,14 @@ exports = async function() {
     // Các busId có ít nhất 1 lịch trình (Schedule)
     //    a. Đang "isActive: true"
     //    b. VÀ "endDate" >= "hôm nay"
-    
+
     // distinct là một lệnh của MongoDB dùng để lấy ra một danh sách các giá trị duy nhất (không trùng lặp)
     // của một trường (field) cụ thể, từ các document khớp với bộ lọc (filter)
     const activeBusIds = await schedulesCollection.distinct("busId", {
         "isActive": true,
         "endDate": { "$gte": today }
     });
-    
+
     // 'activeBusIds' là một mảng, ví dụ:
     // [ ObjectId('xe_A'), ObjectId('xe_C'), ObjectId('xe_D') ]
 
@@ -40,8 +41,28 @@ exports = async function() {
         { "$set": { "isAssigned": false } }
     );
 
-    return { 
+    // Auto cancel trip khi trip do chua start va qua ngay.
+    const autoCancelledResult = await tripsCollection.updateMany(
+        {
+            "status": 'NOT_STARTED',
+            "tripDate": { "$lt": today }
+        },
+        { "$set": { "status": 'CANCELLED' } }
+    );
+
+    // Auto complete trip khi tai xe quen bam done trip do va qua ngay.
+    const autoCompletedResult = await tripsCollection.updateMany(
+        {
+            "status": 'IN_PROGRESS',
+            "tripDate": { "$lt": today }
+        },
+        { "$set": { "status": 'COMPLETED' } }
+    );
+
+    return {
         assigned: assignResult.modifiedCount,
-        unassigned: unassignResult.modifiedCount 
+        unassigned: unassignResult.modifiedCount,
+        cancelledTrip: autoCancelledResult.modifiedCount,
+        completedTrip: autoCompletedResult.modifiedCount
     };
 };

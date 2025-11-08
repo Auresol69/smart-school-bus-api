@@ -122,6 +122,7 @@ module.exports = (io) => {
                                 socket.leave(room);
                         });
                         socket.join(`trip_${tripId}`);
+                        console.log(`Một NGƯỜI XEM đã vào phòng với tripId: ${tripId} (UserId: ${user.id})`);
                     }
 
                     else {
@@ -172,6 +173,7 @@ module.exports = (io) => {
                     } else {
                         // Tac vu bat buoc => MUST AWAIT (tranh race condition)
                         trip.status = 'IN_PROGRESS';
+                        trip.actualStartTime = new Date();
                         await trip.save();
                     }
 
@@ -292,9 +294,85 @@ module.exports = (io) => {
                     } else {
                         console.warn(`Lỗi khi ghi nhận xe ${socket.bus.id} RỜI trạm ${stationId}:`);
                     }
+
+                    // Auto absent voi nhung hoc sinh chua len xe
+                    // Để cập nhật TẤT CẢ các học sinh thỏa mãn điều kiện, bắt buộc phải dùng arrayFilters.
+                    Trip.updateMany(
+                        {
+                            _id: validatedTripId
+                        },
+                        {
+                            $set: {
+                                'studentStops.$[elem].action': 'ABSENT'
+                            }
+                        },
+                        {
+                            arrayFilters: {
+                                'elem.stationId': stationId,
+                                'elem.action': 'PENDING'
+                            }
+                        }
+                    )
+                        .then(updateResult => {
+                            if (updateResult.modifiedCount > 0) {
+
+                                // Khong xai socket.to('room').emit() vi tai xe hoac xe buyt dang khong trong 'room' do.
+                                // io la toan server quan ly tat ca nen thong bao duoc
+                                // Note: Chua giai quyet duoc viec bao vang specific (cu the).
+                                console.log(`Đã tự động báo vắng ${updateResult.modifiedCount} học sinh tại trạm ${stationId}`);
+                                io.to(`trip_${validatedTripId}`).emit('trip:students_marked_absent',
+                                    {
+                                        stationId: stationId,
+                                        count: updateResult.modifiedCount
+                                    });
+                            }
+                        })
+                        .catch(err => {
+                            console.error(`Lỗi tự động báo vắng cho chuyến ${validatedTripId}:`, err);
+                        });
                 } catch (error) {
                     console.error(`Lỗi CSDL khi ghi nhận RỜI trạm ${stationId}:`, error);
                     socket.emit('trip:error', 'Lỗi server khi ghi nhận rời trạm.');
+                }
+            });
+
+            // Ket thuc chuyen
+            // Tài xế bấm nút KẾT THÚC
+            socket.on('driver:end_trip', async () => {
+                try {
+                    const validatedTripId = socket.tripId;
+                    const busId = socket.bus.id;
+
+                    if (!validatedTripId) {
+                        return socket.emit('trip:error', 'Không thể kết thúc chuyến đi chưa bắt đầu.');
+                    }
+
+                    // 1. Cập nhật CSDL
+                    // Dùng await vì đây là tác vụ quan trọng
+                    const updateResult = await Trip.updateOne(
+                        { _id: validatedTripId, status: 'IN_PROGRESS' },
+                        {
+                            $set: {
+                                status: 'COMPLETED',
+                                // (Tùy chọn: Thêm trường này để biết giờ kết thúc)
+                                actualEndTime: new Date()
+                            }
+                        }
+                    );
+
+                    if (updateResult.modifiedCount > 0) {
+                        console.log(`Xe buýt ${busId} đã KẾT THÚC chuyến ${validatedTripId}`);
+
+                        // 2. Thông báo cho Phụ huynh/Admin
+                        io.to(`trip_${validatedTripId}`).emit('trip:completed');
+
+                        // 3. Dọn dẹp
+                        socket.tripId = null;
+                    }
+
+                } catch (error) {
+                    console.error(`Lỗi khi xe ${socket.bus.id} kết thúc chuyến:`, error);
+                    socket.emit('trip:error', 'Lỗi server khi kết thúc chuyến đi.');
                 }
             });
 

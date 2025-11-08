@@ -34,7 +34,7 @@ route.get('/:id/students',
 
 route.patch(
     '/:id/check-in',
-    restrictTo('Driver'),
+    restrictTo('Admin', 'Driver'),
     tripController.checkIn
 );
 

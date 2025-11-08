@@ -41,6 +41,12 @@ const tripSchema = new mongoose.Schema({
         type: Date,
         required: true,
     },
+    actualStartTime: {
+        type: Date
+    },
+    actualEndTime: {
+        type: Date
+    },
     status: {
         type: String,
         enum: ['NOT_STARTED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'],

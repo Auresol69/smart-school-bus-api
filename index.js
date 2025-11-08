@@ -30,6 +30,11 @@ const io = new Server(server, {
 });
 require('./services/initializeSocket.service')(io);
 
+// De embed io vao request cho viec trao doi realtime voi client
+app.use((req, res, next) =>{
+    req.io = io;
+    next();
+});
 
 // Database connection
 const { DB_URL, PORT } = process.env;
