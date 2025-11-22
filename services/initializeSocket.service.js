@@ -6,6 +6,7 @@ const Location = require('../models/location.model');
 const Trip = require('../models/trip.model');
 const Student = require('../models/student.model');
 const { Haversine } = require('../utils/haversine');
+const Message = require('../models/message.model');
 
 /**
  * Initializes Socket.IO event listeners and middleware.
@@ -138,6 +139,42 @@ module.exports = (io) => {
                     console.error(`Lỗi khi ${socket.user.id} join phòng trip_${tripId}:`, error);
                 }
 
+            });
+
+            socket.on('chat:send_message', async (data) => {
+                // data = { receiverId: "...", content: "Con tôi hôm nay nghỉ nhé" }
+                let parsedData = data;
+                try {
+                    // Xử lý trường hợp client gửi lên dạng chuỗi JSON hoặc object
+                    if (typeof parsedData === 'string') {
+                        parsedData = JSON.parse(parsedData);
+                    }
+                    const { content, receiverId } = parsedData;
+                    const senderId = user.id;
+                    const senderRole = user.role;
+
+                    if (senderRole === 'Parent' || senderRole === 'Driver') {
+                        const newMessage = await Message.create({
+                            senderId: senderId,
+                            receiverId: null,
+                            content: content
+                        });
+
+                        io.to('receive_notification').emit('chat:receive_message', newMessage);
+                    }
+                    else if (senderRole === 'Admin' || senderRole === 'Manager') {
+                        const newMessage = await Message.create({
+                            senderId: senderId,
+                            receiverId: receiverId,
+                            content: content
+                        });
+
+                        io.to(`user:${receiverId}`).emit('chat:receive_message', newMessage);
+                    }
+                } catch (error) {
+                    console.error("Lỗi gửi tin nhắn:", error);
+                    socket.emit('chat:error', 'Không thể gửi tin nhắn');
+                }
             });
 
             socket.on('disconnect', () => {
