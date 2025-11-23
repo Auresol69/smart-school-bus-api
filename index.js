@@ -5,6 +5,7 @@ const cookieParser = require("cookie-parser");
 const modelRoute = require("./routes/models.route");
 const tripRoute = require("./routes/trip.route");
 const authRoute = require("./routes/auth.route");
+const routeRoute = require("./routes/route.route");
 require("dotenv").config();
 
 const User = require("./models/user.model");
@@ -90,6 +91,7 @@ const getModel = (req, res, next) => {
 
 app.use("/api/v1/auth", authRoute);
 app.use("/api/v1/trips", tripRoute);
+app.use("/api/v1/routes", routeRoute);
 
 // Route động (generic) phải được đăng ký SAU CÙNG
 app.use("/api/v1/:models", getModel, modelRoute);
