@@ -52,6 +52,48 @@ const permissions = {
         readOne: [ROLES.ADMIN],
         update: [ROLES.ADMIN],
         delete: [ROLES.ADMIN]
+    },
+    notifications: {
+        create: [ROLES.ADMIN],
+        readAll: [ROLES.ADMIN],
+        readOne: [ROLES.ADMIN],
+        update: [ROLES.ADMIN],
+        delete: [ROLES.ADMIN]
+    },
+    alerts: {
+        create: [ROLES.ADMIN],
+        readAll: [ROLES.ADMIN],
+        readOne: [ROLES.ADMIN],
+        update: [ROLES.ADMIN],
+        delete: [ROLES.ADMIN]
+    },
+    stations: {
+        create: [ROLES.ADMIN],
+        readAll: [ROLES.ADMIN],
+        readOne: [ROLES.ADMIN],
+        update: [ROLES.ADMIN],
+        delete: [ROLES.ADMIN]
+    },
+    trips: {
+        create: [ROLES.ADMIN, ROLES.MANAGER], // Example
+        readAll: [ROLES.ADMIN, ROLES.MANAGER, ROLES.DRIVER, ROLES.PARENT],
+        readOne: [ROLES.ADMIN, ROLES.MANAGER, ROLES.DRIVER, ROLES.PARENT],
+        update: [ROLES.ADMIN, ROLES.MANAGER, ROLES.DRIVER],
+        delete: [ROLES.ADMIN, ROLES.MANAGER]
+    },
+    messages: {
+        create: [ROLES.ADMIN, ROLES.MANAGER, ROLES.PARENT, ROLES.DRIVER],
+        readAll: [ROLES.ADMIN],
+        readOne: [ROLES.ADMIN, ROLES.MANAGER, ROLES.PARENT, ROLES.DRIVER],
+        update: [ROLES.ADMIN],
+        delete: [ROLES.ADMIN]
+    },
+    locations: {
+        create: [ROLES.DRIVER], // Usually updated by driver/system
+        readAll: [ROLES.ADMIN],
+        readOne: [ROLES.ADMIN, ROLES.MANAGER, ROLES.PARENT],
+        update: [ROLES.ADMIN],
+        delete: [ROLES.ADMIN]
     }
 };
 
