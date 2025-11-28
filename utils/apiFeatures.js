@@ -1,4 +1,5 @@
 class APIFeatures {
+    // CHAINING: features.filter().limitField().pagination()
     constructor(query, queryString) {
         this.query = query;
         this.queryString = queryString;
@@ -38,9 +39,17 @@ class APIFeatures {
         return this; // chaining, this = object APIFeatures moi
     }
 
-    // Mo rong
+    // Mo rong (api/users?fields=name, email) 
+    // Note: không cho phép trộn lẫn giữa việc "chọn lấy" (inclusion) và "loại bỏ" (exclusion)
     limitField() {
+        if (this.queryString.fields) {
+            const fields = this.queryString.fields.split(',').join(' ');
+            this.query = this.query.select(fields);
+        }
+        else
+            this.query = this.query.select('-__v');
 
+        return this;
     }
 };
 

@@ -12,7 +12,7 @@ const selectAll = (Model) => {
         // Dùng .clone() để tạo một bản sao, tránh việc countDocuments bị ảnh hưởng bởi .pagination() sau này
         const countQuery = features.query.clone();
 
-        features.sort().pagination();
+        features.sort().pagination().limitField();
 
         const [models, totalResults] = await Promise.all([
             features.query,
