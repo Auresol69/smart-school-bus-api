@@ -154,7 +154,7 @@ const refreshToken = catchAsync(async (req, res, next) => {
         return next(new AppError('Invalid token. Please log in again', 401));
     }
 
-    const user = await User.findById(decode.id);
+    const user = await User.findById(decode.id).select('+refreshToken');
     if (!user)
         return next(new AppError('The user belonging to this token does no longer exist.', 401));
 
